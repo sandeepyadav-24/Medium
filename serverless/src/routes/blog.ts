@@ -3,6 +3,8 @@ import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { verify } from "hono/jwt";
 
+import { postBlog, putBlog, particularBlog } from "../zod";
+
 export const blogRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -33,6 +35,11 @@ blogRouter.use("/*", async (c, next) => {
 blogRouter.post("/", async (c) => {
   console.log("Raeched Route");
   const body = await c.req.json();
+  const { success } = postBlog.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ msg: "Invalid Input" });
+  }
   const id = c.get("authorId");
   console.log("Body", body);
   const prisma = new PrismaClient({
@@ -60,20 +67,30 @@ blogRouter.post("/", async (c) => {
 
 blogRouter.put("/", async (c) => {
   const body = await c.req.json();
-  const id = c.get("authorId");
+  const { success } = putBlog.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ msg: "INvalid Input" });
+  }
+  //const id = c.get("authorId");
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
-  const post = await prisma.post.update({
-    where: {
-      id: body.id,
-    },
-    data: {
-      title: body.title,
-      content: body.content,
-    },
-  });
-  return c.json({ message: "Update Blog " });
+  try {
+    const post = await prisma.post.update({
+      where: {
+        id: body.id,
+      },
+      data: {
+        title: body.title,
+        content: body.content,
+      },
+    });
+    return c.json({ message: "Update Blog " });
+  } catch (error) {
+    c.status(411);
+    return c.json({ msg: error });
+  }
 });
 blogRouter.get("/bulk", async (c) => {
   const authorId = await c.get("authorId");
@@ -95,6 +112,11 @@ blogRouter.get("/bulk", async (c) => {
 
 blogRouter.get("/:id", async (c) => {
   const param = await c.req.param("id");
+  const { success } = particularBlog.safeParse(param);
+  if (!success) {
+    c.status(411);
+    return c.json({ msg: "Invalid params" });
+  }
   console.log(param);
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,

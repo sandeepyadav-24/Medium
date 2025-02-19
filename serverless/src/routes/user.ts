@@ -2,19 +2,7 @@ import { Hono } from "hono";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { decode, sign, verify } from "hono/jwt";
-import { z } from "zod";
-
-const signupInput = z.object({
-  name: z.string().max(30),
-  email: z.string().email(),
-  password: z.string().max(30),
-});
-
-const loginInput = z.object({
-  email: z.string().email(),
-  password: z.string().max(30),
-});
-
+import { signupInput, loginInput } from "../zod";
 export const userRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
