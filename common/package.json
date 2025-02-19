@@ -1,0 +1,8 @@
+{
+  "name": "@sandeepyadav24/medium-common",
+  "version": "1.0.0",  
+  "dependencies": {
+    "zod": "^3.24.2"
+  },
+  "main": "dist/index.js"
+}
